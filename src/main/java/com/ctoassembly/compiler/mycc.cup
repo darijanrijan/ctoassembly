@@ -1,0 +1,711 @@
+package com.ctoassembly.compiler;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import java_cup.runtime.Symbol;
+import com.ctoassembly.compiler.Codegen.Program;
+import com.ctoassembly.compiler.Type.SimpleType;
+
+action code {:
+
+	private final Registers fRegisters= new Registers();
+	private final Codegen fCodegen= new Codegen(fRegisters, new LexLineNoResolver() {
+		@Override
+		public Integer getCurrentCodeLineNo() {
+			return parser.getScannerCurrentLineNo();
+		}
+	});
+	/**
+	 * Current context (scope) of a c code
+	 */
+	private Context fContext= new Context(fCodegen);
+
+	public Program getProgram() {
+		return fCodegen.getProgram();
+	}
+	
+:}
+
+parser code {:
+	
+	/**
+   * @deprecated Please use {@link parser#parse(String)}.
+   */
+	@Override
+	@Deprecated
+	public Symbol parse() throws ParserException {
+		throw new UnsupportedOperationException("parse() is no longer supported. Please use parser#parse(String)");
+	}
+
+	/**
+	 * This method provides the main parsing routine. It returns only when 
+     *  done_parsing() has been called (typically because the parser has 
+     *  accepted, or a fatal error has been reported).  See the header 
+     *  documentation of the {@link lr_parser} for the class regarding how 
+     *  shift/reduce parsers operate and how the various tables are used.
+     *  
+	 * @param cCode
+	 * 			c-code to compile
+	 * @return
+	 * 			last symbol processed by reduce
+	 */
+	public Program parse(final String cCode) throws ParserException {
+		if (cCode == null) {
+			return new Program();
+		}
+		try(final InputStream is= new ByteArrayInputStream(cCode.getBytes()); 
+			final BufferedReader br= new BufferedReader(new InputStreamReader(is))) {
+			setScanner(new Yylex(br));
+			super.parse();
+			return getProgram();
+		} catch (Exception e) {
+			throw new ParserException(e, getScannerCurrentLineNo());
+		}
+	}
+
+	@Override
+	public void report_fatal_error(final String message, final Object info) throws Exception {
+		throw new ParserException("Syntax error on token '" + getScannerLastToken() + "'", getScannerCurrentLineNo());
+	}
+	
+	public static void main(String args[]) throws Exception {
+		String fname = "./src/main/java/com/ctoassembly/compiler/test.c";
+		final String cname = fname.substring(0, fname.length() - 2);
+		String content = new String(Files.readAllBytes(Paths.get(fname)));
+		final parser parser = new parser();
+		parser.parse(content);
+		try (final FileOutputStream out = new FileOutputStream(cname + ".asm")) {
+			out.write(parser.getProgram().asText().getBytes());
+		}
+	}
+	
+	public Program getProgram() {
+		return action_obj.getProgram();
+	}
+
+	/**
+	 * Returns the line number of a line of c code that is currently being parsed.
+	 */
+	/* default */ Integer getScannerCurrentLineNo() {
+		return ((Yylex)getScanner()).getLineNo();
+	}
+	
+	/* default */ String getScannerLastToken() {
+		return ((Yylex)getScanner()).getLastToken();
+	}
+:}
+
+terminal String ID, INT_NUMBER, STRING;
+terminal Integer TYPE, ASSIGN;
+terminal Integer LOG_AND, LOG_OR, NOT_LOG_OP, RELOP;
+terminal Integer AND_OP, OR_OP, XOR_OP, NOT_OP;
+terminal Integer MUL, DIV, MOD, PLUS, MINUS, SHIFT, INCDEC;
+terminal SEMICOLON, LPAREN, RPAREN, LBRACKET, RBRACKET, LSQBRACKET, RSQBRACKET;
+terminal IF, ELSE, WHILE, RETURN, COMMA;
+
+non terminal SymTabEntry identifier, inc_dec_exp, constant, assignment_exp;
+non terminal SymTabEntry exp, binary_exp, function_call;
+non terminal VarInit variable;
+non terminal ArrayList variable_list, exp_list, array;
+non terminal Integer log_exp;
+non terminal program, variable_decl;
+non terminal function_decl, parameter, parameter_list, body;
+non terminal statement_list, stmt, statement, assignment_statement;
+non terminal arguments, argument_list;
+non terminal function_call_statement, if_statement, if_part;
+non terminal while_statement, return_statement;
+non terminal compound_statement, num_statement;
+non terminal declaration, declaration_list;
+
+precedence left SEMICOLON, ELSE;
+precedence left LOG_OR, LOG_AND;
+precedence left OR_OP, XOR_OP, AND_OP, SHIFT;
+precedence left PLUS, MINUS;
+precedence left MOD, DIV, MUL;
+precedence left NOT_OP, NOT_LOG_OP;
+precedence left INCDEC, TYPE;
+precedence left LPAREN, RPAREN;
+
+start with program ;
+
+program ::= 
+	declaration_list
+		{:
+			//check that the program has a main() function
+			Semantic.assertHasMain(fContext);
+		:}
+	;
+	
+declaration_list ::=
+	declaration 
+	| declaration_list declaration
+	;
+	
+declaration ::=
+	function_decl
+	| variable_decl
+	;
+
+variable_decl ::=
+	TYPE:type variable_list:list
+		{:
+			//insert all variables into the current context
+			for (final Object elem : list) {
+				final VarInit var= (VarInit) elem;
+				final SymTabEntry idf= var.getIdentifier();
+				final SymTabEntry[] initValues= var.getInitValues();
+				
+				idf.getType().setInnerType(type);
+				fContext.insertVariable(idf, initValues);
+			}
+		:}
+	SEMICOLON
+	;
+
+variable_list ::=
+	variable:v
+		{:
+			//initialise the array for a list of variables
+			RESULT= new ArrayList<VarInit>();
+			RESULT.add(v);
+		:}
+	| variable_list:list COMMA variable:v
+		{:
+			//add a variable to the array
+			RESULT= list;
+			RESULT.add(v);
+		:}
+	;
+
+variable ::=
+	identifier:idf
+		{:
+			//identifier
+			RESULT= new VarInit(idf);
+		:}
+	| identifier:idf ASSIGN:assign exp:e
+		{:
+			//identifier with initialisation
+			Semantic.assertValidAssignForVariableDeclaration(assign);
+			RESULT= new VarInit(idf, e);
+		:}
+	| identifier:idf ASSIGN:assign array:list
+		{:
+			//identifier with array initialisation
+			Semantic.assertValidAssignForVariableDeclaration(assign);
+			RESULT= new VarInit(idf, (SymTabEntry[]) list.toArray(new SymTabEntry[0]));
+		:}
+	;
+
+identifier ::=
+	ID:id
+		{:
+			//ID as an identifier (e.g. x)
+			RESULT= new SymTabEntry(id, new Type.SimpleType());
+		:}
+	| MUL ID:id
+		{:
+			//star ID as an identifier (e.g. *x)
+			RESULT= new SymTabEntry(id, new Type.PointerType(1));
+		:}
+	| ID:id LSQBRACKET RSQBRACKET
+		{:
+			//array ID as an identifier (e.g. x[])
+			RESULT= new SymTabEntry(id, new Type.ArrayType());
+			RESULT.setArrayIndex(-1);
+		:}
+	| ID:id LSQBRACKET INT_NUMBER:c RSQBRACKET
+		{:
+			//array ID as an identifier (e.g. x[1])
+			RESULT= new SymTabEntry(id, new Type.ArrayType());
+			RESULT.setArrayIndex(Integer.decode(c));
+		:}
+	;
+	
+array ::=
+	LBRACKET exp_list:list RBRACKET
+		{:
+			//array (e.g. { 1, 2, 3 }
+			RESULT= list;
+		:}
+	;
+		
+exp_list ::=
+	exp:e
+		{:
+		  	RESULT= new ArrayList<SymTabEntry>();
+		  	RESULT.add(e);
+		:}
+	| exp_list:list COMMA exp:e
+		{:
+			RESULT= list;
+			RESULT.add(e);
+		:}
+	;
+	
+function_decl ::= 
+	TYPE:type ID:id LPAREN 
+		{:
+			final Function function= new Function(id, new Type.SimpleType(type));
+			fContext.fFunction= function;
+			fContext.insertFunction(function);
+			fContext.enterChildScope();
+
+			fCodegen.genFunctionLabel(function);
+			fCodegen.genFrameBase();
+		:}
+	parameter_list RPAREN body
+		{:
+			fContext.enterGlobalScope();
+		:}
+	;
+
+parameter_list ::=
+	parameter
+	| parameter_list COMMA parameter
+	|
+	;
+
+parameter ::=
+	TYPE:type identifier:idf
+		{:
+			idf.getType().setInnerType(type);
+			fContext.insertVariable(idf);
+		:}
+	;
+
+body ::= 
+	LBRACKET 
+		{:
+			fContext.enterChildScope();
+
+			fCodegen.genStrLab(fContext.fFunction.getName(), "_body", true);
+		:}
+	statement_list
+		{:
+			fCodegen.genStrLab(fContext.fFunction.getName(), "_exit", true);
+			fCodegen.genFunctionReturn();
+		:}
+	RBRACKET
+	;
+
+statement_list ::= 
+	statement_list statement
+	|
+	;
+	
+statement ::=
+	stmt
+	{:
+		//after the statement is done, we generate inc (++) or dec (--) statements present in the previous line
+		//(e.g. in: int x = y++, we first generate int x = y and finally inc y);
+		fContext.generateIncDecStatements();
+	:}
+	;
+	
+stmt ::= 
+	assignment_statement
+	| num_statement
+	| function_call_statement
+	| if_statement
+	| while_statement
+	| return_statement
+	| compound_statement
+	| variable_decl
+	;
+	
+num_statement ::= 
+	exp:exp
+		{:
+			fRegisters.releaseReg(exp);
+		:}
+	SEMICOLON
+	;
+	
+assignment_statement ::=
+	assignment_exp SEMICOLON;
+	
+assignment_exp ::= 
+	identifier:destination ASSIGN:assignOperation exp:e
+		{:
+			Semantic.assertValidLValue(destination, fContext);
+			final SymTabEntry originalVariable= fContext.getVariable(destination.getName());
+			Semantic.assertTypes(originalVariable.getType(), e.getType(), "assignment");
+			
+			destination.setKind(originalVariable.getKind());
+			destination.getType().setInnerType(originalVariable.getType().getInnerType());
+			destination.setAttribute(originalVariable.getAttribute());
+			destination.setPointee(originalVariable);
+			
+			if (assignOperation != Definitions.ASSIGN_OP) {
+				final SymTabEntry tempRegister= fCodegen.genMovToRegister(destination);
+				Semantic.assertValidOperandPointerLevel(e, tempRegister, assignOperation, "binary " + Definitions.OP_TOKEN[assignOperation], fContext);
+				e= fCodegen.genArith(assignOperation, tempRegister, e);
+			}
+
+			fCodegen.genMov(e, destination);
+			RESULT= destination;
+		:}
+	;
+
+binary_exp ::= 
+	exp:e1 PLUS:op exp:e2
+		{:
+			Semantic.assertTypes(e1.getType(), e2.getType(), "binary " + Definitions.OP_TOKEN[op]);
+			Semantic.assertValidOperandPointerLevel(e1, e2, op, "binary " + Definitions.OP_TOKEN[op], fContext);
+			
+			RESULT= fCodegen.genArith(op, e1, e2);
+		:}
+	| exp:e1 MINUS:op exp:e2
+		{:
+			Semantic.assertTypes(e1.getType(), e2.getType(), "binary " + Definitions.OP_TOKEN[op]);
+			Semantic.assertValidOperandPointerLevel(e1, e2, op, "binary " + Definitions.OP_TOKEN[op], fContext);
+			
+			RESULT= fCodegen.genArith(op, e1, e2);
+		:}
+	| exp:e1 DIV:op exp:e2
+		{:
+			Semantic.assertTypes(e1.getType(), e2.getType(), "binary " + Definitions.OP_TOKEN[op]);
+			Semantic.assertValidOperandPointerLevel(e1, e2, op, "binary " + Definitions.OP_TOKEN[op], fContext);
+			
+			RESULT= fCodegen.genArith(op, e1, e2);
+		:}
+	| exp:e1 MUL:op exp:e2
+		{:
+			Semantic.assertTypes(e1.getType(), e2.getType(), "binary " + Definitions.OP_TOKEN[op]);
+			Semantic.assertValidOperandPointerLevel(e1, e2, op, "binary " + Definitions.OP_TOKEN[op], fContext);
+			
+			RESULT= fCodegen.genArith(op, e1, e2);
+		:}
+	| exp:e1 MOD:op exp:e2
+		{:
+			Semantic.assertTypes(e1.getType(), e2.getType(), "binary " + Definitions.OP_TOKEN[op]);
+			Semantic.assertValidOperandPointerLevel(e1, e2, op, "binary " + Definitions.OP_TOKEN[op], fContext);
+			
+			RESULT= fCodegen.genArith(op, e1, e2);
+		:}
+	| exp:e1 AND_OP:op exp:e2
+		{:
+			Semantic.assertTypes(e1.getType(), e2.getType(), "binary " + Definitions.OP_TOKEN[op]);
+			Semantic.assertValidOperandPointerLevel(e1, e2, op, "binary " + Definitions.OP_TOKEN[op], fContext);
+			
+			RESULT= fCodegen.genArith(op, e1, e2);
+		:}
+	| exp:e1 OR_OP:op exp:e2
+		{:
+			Semantic.assertTypes(e1.getType(), e2.getType(), "binary " + Definitions.OP_TOKEN[op]);
+			Semantic.assertValidOperandPointerLevel(e1, e2, op, "binary " + Definitions.OP_TOKEN[op], fContext);
+			
+			RESULT= fCodegen.genArith(op, e1, e2);
+		:}
+	| exp:e1 XOR_OP:op exp:e2
+		{:
+			Semantic.assertTypes(e1.getType(), e2.getType(), "binary " + Definitions.OP_TOKEN[op]);
+			Semantic.assertValidOperandPointerLevel(e1, e2, op, "binary " + Definitions.OP_TOKEN[op], fContext);
+			
+			RESULT= fCodegen.genArith(op, e1, e2);
+		:}
+	| exp:e1 SHIFT:op exp:e2
+		{:
+			Semantic.assertTypes(e1.getType(), e2.getType(), "binary " + Definitions.OP_TOKEN[op]);
+			Semantic.assertValidOperandPointerLevel(e1, e2, op, "binary " + Definitions.OP_TOKEN[op], fContext);
+			
+			RESULT= fCodegen.genArith(op, e1, e2);
+		:}
+	;
+	
+exp ::=
+	binary_exp:e
+		{:
+			RESULT= e;
+		:}
+	| identifier:id
+		{:	
+			final SymTabEntry originalVariable= fContext.getVariable(id.getName());
+			id.setAttribute(originalVariable.getAttribute());
+			id.setKind(originalVariable.getKind());
+			id.getType().setInnerType(originalVariable.getType().getInnerType());
+			id.setPointee(originalVariable);
+			
+			RESULT= fCodegen.genMovToRegister(id);
+		:}
+	| AND_OP ID:id
+		{:
+			final SymTabEntry variable= fContext.getVariable(id);
+			RESULT= fCodegen.genLea(variable);
+		:}
+	| function_call:function
+		{:
+			final SymTabEntry functionRegister= fRegisters.getFunctionReturnRegister();
+			functionRegister.setType(function.getType());
+			RESULT= functionRegister;
+		:}
+	| PLUS exp:e
+		{:	
+			RESULT= e; 
+		:}
+	| MINUS exp:e
+		{: 
+			RESULT= fCodegen.genUnaryMinus(e); 
+		:}
+	| LPAREN exp:e RPAREN
+		{:	
+			RESULT= e; 
+		:}
+	| NOT_OP exp:e 
+		{:
+			RESULT= fCodegen.genNot(e);
+		:}
+	| inc_dec_exp:e 
+		{:	
+			RESULT= e; 
+		:}
+	| constant:c
+		{:	
+			RESULT= c; 
+		:}
+	| assignment_exp:e
+		{:
+			RESULT= e;
+		:}
+	| STRING:s
+		{:
+			RESULT= fCodegen.genString(s);
+		:}
+	;
+	
+inc_dec_exp
+	::= INCDEC:op identifier:id
+		{:
+			final SymTabEntry originalVariable= fContext.getVariable(id.getName());
+			id.setAttribute(originalVariable.getAttribute());
+			id.setKind(originalVariable.getKind());
+			id.getType().setInnerType(originalVariable.getType().getInnerType());
+			id.setPointee(originalVariable);
+			
+			fCodegen.genIncDec(id, op);
+			RESULT= id;
+		:}
+	| identifier:id INCDEC:op
+		{:
+			final SymTabEntry originalVariable= fContext.getVariable(id.getName());
+			id.setAttribute(originalVariable.getAttribute());
+			id.setKind(originalVariable.getKind());
+			id.getType().setInnerType(originalVariable.getType().getInnerType());
+			id.setPointee(originalVariable);
+			
+			fContext.fIncDecQueue.add(new IncDecDescriptor(id, op, parser.getScannerCurrentLineNo()));
+			RESULT= id;
+		:}
+	;
+	
+constant ::= 
+	INT_NUMBER:c
+		{:	
+			RESULT= fContext.insertConstant(Integer.decode(c));
+			RESULT.setType(new SimpleType(Definitions.INT_TYPE));
+		:}
+	;
+	
+function_call ::= 
+	ID:id
+		{:
+			final SymTabEntry function= fContext.getFunction(id);
+			
+			fContext.fFunctionCallStack.push(function.getName());
+			fContext.fFunctionCallName= function.getName();		
+			
+			fCodegen.genRegSave();
+		:}
+	 LPAREN arguments RPAREN
+		{:
+			final Function function= fContext.getFunction(fContext.fFunctionCallName);
+			Semantic.assertArgumentsNumber(function, fContext.fArgNum);
+							
+			fCodegen.genFunctionCall(function);
+			fCodegen.genClearLocVar(fContext.fArgNum);
+			fCodegen.genRegRestore();
+			
+			fContext.fArgNum= fContext.fArgumentCallStack.pop();
+			fContext.fFunctionCallName= fContext.fFunctionCallStack.pop();
+			
+			RESULT= function;
+		:}
+	;
+	
+log_exp ::= 
+	exp:e
+		{:
+			final SymTabEntry zero= new SymTabEntry("0", e.getType());
+			fCodegen.genCmp(e, zero);		
+			RESULT= Definitions.NE;
+		:}
+	| NOT_LOG_OP exp:e 
+		{:
+			final SymTabEntry zero= new SymTabEntry("0", e.getType());
+			fCodegen.genCmp(e, zero);
+			RESULT= Definitions.EQ;
+		:}
+	| exp:e1 RELOP:relop exp:e2
+		{:
+			Semantic.assertTypes(e1.getType(), e2.getType(), "relation operator");
+			
+			fCodegen.genCmp(e1, e2);
+			RESULT= relop;
+		:}
+	| log_exp:e1 LOG_AND
+		{:
+			fCodegen.genJumpToNumLab(Definitions.OPPOSITE_JUMPS[e1], "false", fContext.fFalseLabNum);
+		:}
+	 log_exp:e2
+		{:
+			RESULT= e2;
+		:}
+	| log_exp:e1 LOG_OR
+		{:
+			fCodegen.genJumpToNumLab(Definitions.JUMPS[e1], "true", fContext.fLabNum);
+			fCodegen.genNumLab("false", fContext.fFalseLabNum);
+			
+			fContext.fFalseLabNum++;
+		:}
+	 log_exp:e2
+		{:
+			RESULT= e2;
+		:}
+	;
+		
+arguments ::= 
+	argument_list
+		{:
+			int args= fContext.fArgNum;
+			while(args-- > 0) {
+				fCodegen.genPush(fContext.fArgumentStack.pop());
+			}
+		:}
+	|
+		{:
+			fContext.fArgumentCallStack.push(fContext.fArgNum);
+			fContext.fArgNum= 0;
+		:}
+	;
+	
+argument_list ::= 
+	exp:exp
+		{:
+			fContext.fArgumentCallStack.push(fContext.fArgNum);
+			
+			Semantic.assertArgumentType(fContext.getFunction(fContext.fFunctionCallName), exp, fContext.fArgNum);
+			
+			fContext.fArgNum++;
+			fContext.fArgumentStack.push(exp);
+		:}
+	| argument_list COMMA exp:exp
+		{:	
+			Semantic.assertArgumentType(fContext.getFunction(fContext.fFunctionCallName), exp, fContext.fArgNum);
+			
+			fContext.fArgNum++;
+			fContext.fArgumentStack.push(exp);
+		:}
+	;
+	
+function_call_statement ::= 
+	function_call SEMICOLON
+	;
+	
+if_statement ::= 
+	if_part
+		{:
+			fCodegen.genNumLab("exit", fContext.fLabNum);
+		:}
+	| if_part ELSE 
+		{:
+			fContext.fLabelStack.push(fContext.fLabNum);
+		:}
+	 statement
+		{:
+			fCodegen.genNumLab("exit", fContext.fLabelStack.pop());
+		:}
+	;
+	
+if_part ::= 
+	IF LPAREN 
+		{:	
+			fContext.fLabNum= ++fContext.fFalseLabNum;
+
+			fCodegen.genNumLab("if", fContext.fLabNum);
+		:}
+	 log_exp:e
+		{:
+			fCodegen.genJumpToNumLab(Definitions.OPPOSITE_JUMPS[e], "false", fContext.fFalseLabNum);
+			fCodegen.genNumLab("true", fContext.fLabNum);
+			
+			fContext.fLabelStack.push(fContext.fFalseLabNum);
+			fContext.fLabelStack.push(fContext.fLabNum);
+		:}
+	 RPAREN statement
+		{:
+			fContext.fLabNum= fContext.fLabelStack.pop();
+			//A hack! See the description for an explanation.
+			fCodegen.decLexLineNoModifier();
+			fCodegen.genJumpToNumLab(Definitions.UNCONDITIONAL_JUMP, "exit", fContext.fLabNum);
+			fCodegen.genNumLab("false", fContext.fLabelStack.pop());
+			//A hack! See the description for an explanation.
+			fCodegen.incLexLineNoModifier();
+		:}
+	;
+		
+while_statement ::= 
+	WHILE LPAREN 
+		{:
+			fContext.fLabNum= ++fContext.fFalseLabNum;
+
+			fCodegen.genNumLab("while", fContext.fLabNum);
+		:}
+	 log_exp:e
+		{:
+			fCodegen.genJumpToNumLab(Definitions.OPPOSITE_JUMPS[e], "false", fContext.fFalseLabNum);
+			fCodegen.genNumLab("true", fContext.fFalseLabNum);
+			
+			fContext.fLabelStack.push(fContext.fFalseLabNum);
+			fContext.fLabelStack.push(fContext.fLabNum);
+		:}
+	 RPAREN statement
+		{:
+			fContext.fLabNum= fContext.fLabelStack.pop();
+	 
+			fCodegen.genJumpToNumLab(Definitions.UNCONDITIONAL_JUMP, "while", fContext.fLabNum);
+			fCodegen.genNumLab("false", fContext.fLabelStack.pop());
+			fCodegen.genNumLab("exit", fContext.fLabNum);
+		:}
+	;
+	
+return_statement ::= 
+	RETURN exp:e
+		{:
+			Semantic.assertTypes(fContext.fFunction.getType(), e.getType(), "return statement of function: " + fContext.fFunction.getName());
+
+			fCodegen.genMov(e, fRegisters.getFunctionReturnRegister());
+			fCodegen.genReturn(fContext.fFunction.getName() + "_exit");		
+		:}
+	SEMICOLON
+	;
+	
+compound_statement ::= 
+	LBRACKET
+		{:
+			fContext.enterChildScope();
+		:}
+	statement_list
+		{:
+			fContext.enterParentScope();
+		:}
+	RBRACKET
+	;

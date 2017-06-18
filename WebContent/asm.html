@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+	<meta http-equiv="Pragma" content="no-cache" />
+	<meta http-equiv="Expires" content="0" />
+	<meta name="description" content="Online C to assembly compiler - about assembly code.">
+	<title>C to Assembly Compiler and Interpreter - About hypothetical assembly code</title>
+	<link rel="shortcut icon" href="favicon.png"> 
+	<link rel="stylesheet" href="bootstrap/css/bootstrap.css">
+	<link rel="stylesheet" href="css/docs.css">
+	<script src="js/vendor/prettify.js"></script>
+	<style type="text/css">
+	td:first-child {
+		font-family: monospace;
+		width: 15em;
+	}
+	
+	td:nth-child(2) {
+		font-size: 14px !important;
+	}
+	
+	.table {
+		background:fefefe;
+	}
+	
+	.table tr.collapsing {
+		transition: none;
+		-webkit-transition: none;
+	}
+	
+	.table tr.collapse td {
+		padding: 0px;
+	}
+	
+	.table tr.collapse.in {
+		display: table-row !important;
+	}
+	
+	.table tr.collapse.in td {
+		padding: 8px;
+	}
+	
+	.pointer {
+		cursor: pointer;
+	}
+	</style>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+	<script src="bootstrap/js/bootstrap.js" type="text/javascript"></script>
+</head>
+<body>
+	<div class="navbar navbar-custom navbar-static-top">
+			<div class="container">
+		      <div class="navbar-custom">
+		        <ul class="nav navbar-nav nav-justified">
+		          <li><a href="/"><span>home</span></a></li>
+		          <li><a href="microc.html"><span>micro c</span></a></li>
+		          <li class="active"><a href="asm.html"><span>hypothetical asm</span></a></li>
+		          <li><a href="about.html"><span>about</span></a></li>
+		        </ul>
+		      </div><!--/.nav-collapse -->
+		    </div><!--/.container -->
+		</div><!--/.navbar -->
+	<div class="tile container">
+		<div class="col-md-offset-3 col-md-6">
+			<h1>
+				What <strong>assembly</strong> language do we use?
+			</h1>
+			<br />
+			<p class="lead">
+				The assembly language our compiler generates is <strong>hypothetical
+					assembly language</strong>, based on <strong>x86 assembly</strong> language,
+				but simplified for learning purposes. We turned our attention away
+				from system interrupts and varying register lengths and focused on
+				basic instruction set which includes data tranfer, control flow,
+				arithmetic, shift and logical instructions.
+			</p>
+			<hr />
+			<section id="Instructions">
+				<h2>Instructions</h2>
+				<p>
+					An instruction is a statement that is executed at runtime. A <strong>hypo-asm</strong>
+					instruction statement can consist of three parts:
+				</p>
+				<ul>
+					<li>Label (optional)</li>
+					<li>Instruction (required)</li>
+					<li>Operands (instruction specific)</li>
+				</ul>
+				<hr />
+				<h3 id="DataTransferInstructions">Data transfer instructions</h3>
+				<table class="table table-condensed">
+					<tr>
+						<td><strong>MOV&nbsp;</strong> src, dest</td>
+						<td>copies the source (<tt>src</tt>) operand to destination (<tt>dest</tt>)
+							operand
+						</td>
+					</tr>
+					<tr>
+						<td><strong>LEA&nbsp;</strong> src, dest</td>
+						<td>calculates the address of the <tt>src</tt> operand and
+							loads it into the <tt>dest</tt> operand
+						</td>
+					</tr>
+					<tr>
+						<td><strong>PUSH</strong> src</td>
+						<td>copies the <tt>src</tt> to the top of the stack
+						</td>
+					</tr>
+					<tr>
+						<td><strong>POP&nbsp;</strong> dest</td>
+						<td>copies a value from the top of the stack to the <tt>dest</tt></td>
+					</tr>
+				</table>
+				<hr />
+				<h3 id="ControlFlowInstructions">Control flow instructions</h3>
+				<table class="table table-condensed">
+					<tr>
+						<td><strong>CMP&nbsp;</strong> arg1, arg2</td>
+						<td>subtracts the <tt>arg2</tt> from the <tt>arg1</tt> and
+							sets flag bits
+						</td>
+					</tr>
+					<tr>
+						<td><strong>JEQ&nbsp;</strong> label</td>
+						<td>jumps to the address specified by the <tt>label</tt> if
+							operands of previous <tt>CMP</tt> instruction are equal (<abbr
+							title="Zero flag">ZF</abbr> = 1)
+						</td>
+					</tr>
+					<tr>
+						<td><strong>JNE&nbsp;</strong> label</td>
+						<td>jumps if operands are not equal (<abbr title="Zero flag">ZF</abbr>
+							= 0)
+						</td>
+					</tr>
+					<tr>
+						<td><strong>JLE&nbsp;</strong> label</td>
+						<td>jumps if <tt>arg1</tt> is lower or equal than <tt>arg2</tt>
+							(<abbr title="Zero flag">ZF</abbr> = 1 or <abbr title="Sign flag">SF</abbr>
+							different from <abbr title="Overflow flag">OF</abbr></td>
+					</tr>
+					<tr>
+						<td><strong>JGE&nbsp;</strong> label</td>
+						<td>jumps if <tt>arg1</tt> is greater or equal than <tt>arg2</tt>
+							(<abbr title="Sign flag">SF</abbr> equal to <abbr
+							title="Overflow flag">OF</abbr>)
+						</td>
+					</tr>
+					<tr>
+						<td><strong>JLT&nbsp;</strong> label</td>
+						<td>jumps if <tt>arg1</tt> is lower than <tt>arg2</tt> (<abbr
+							title="Sign flag">SF</abbr> different from <abbr
+							title="Overflow flag">OF</abbr>)
+						</td>
+					</tr>
+					<tr>
+						<td><strong>JGT&nbsp;</strong> label</td>
+						<td>jumps if <tt>arg1</tt> is greater than <tt>arg2</tt> (<abbr
+							title="Zero flag">ZF</abbr> = 0 and <abbr title="Sign flag">SF</abbr>
+							equal to <abbr title="Overflow flag">OF</abbr>)
+						</td>
+					</tr>
+					<tr>
+						<td><strong>CALL</strong> label</td>
+						<td>pushes the address of the instruction to the stack and
+							jumps to a location specified by the <tt>label</tt>
+						</td>
+					</tr>
+					<tr>
+						<td><strong>RET&nbsp;</strong></td>
+						<td>pops the stack into the instruction pointer</td>
+					</tr>
+				</table>
+				<hr />
+				<h3 id="ArithmeticInstructions">Arithmetic instructions</h3>
+				<table class="table table-condensed">
+					<tr>
+						<td><strong>ADD&nbsp;</strong> arg1, arg2, dest</td>
+						<td>sum of <tt>arg1</tt> and <tt>arg2</tt> is stored into the
+							<tt>dest</tt> operand
+						</td>
+					</tr>
+					<tr>
+						<td><strong>SUB&nbsp;</strong> arg1, arg2</td>
+						<td>subtracts <tt>arg2</tt> from <tt>arg1</tt> and stores the
+							result into the <tt>dest</tt> operand
+						</td>
+					</tr>
+					<tr>
+						<td><strong>MUL&nbsp;</strong> arg1, arg2, dest</td>
+						<td>multiplies <tt>arg1</tt> and <tt>arg2</tt> and stores the
+							result into the <tt>dest</tt> operand. Multiplication overflow is
+							stored to 12<sup>th</sup> register
+						</td>
+					</tr>
+					<tr>
+						<td><strong>DIV&nbsp;</strong> arg1, arg2, dest</td>
+						<td>divides <tt>arg1</tt> with <tt>arg2</tt> and stores the
+							result into the <tt>dest</tt> operand. Remainder is stored to 12<sup>th</sup>
+							register
+						</td>
+					</tr>
+					<tr>
+						<td><strong>INC&nbsp;</strong> src</td>
+						<td>increments <tt>src</tt></td>
+					</tr>
+					<tr>
+						<td><strong>DEC&nbsp;</strong> src</td>
+						<td>decrements <tt>src</tt></td>
+					</tr>
+				</table>
+				<hr />
+				<h3 id="ShiftInstructions" class="subgroup">Shift instructions</h3>
+				<table class="table table-condensed">
+					<tr>
+						<td><strong>SHL&nbsp;</strong> arg1, arg2, dest</td>
+						<td>logically shifts <tt>arg1</tt> to the left by <tt>arg2</tt>
+							bits and stores the result into the <tt>dest</tt> operand
+						</td>
+					</tr>
+					<tr>
+						<td><strong>SHR&nbsp;</strong> arg1, arg2, dest</td>
+						<td>logically shifts <tt>arg1</tt> to the right
+						</td>
+					</tr>
+				</table>
+				<hr />
+				<h3 id="LogicalInstructions">Logical instructions</h3>
+				<table class="table table-condensed">
+					<tr>
+						<td><strong>AND&nbsp;</strong> arg1, arg2, dest</td>
+						<td>logical bitwise AND between <tt>arg1</tt> and <tt>arg2</tt>.
+							The result is stored into the <tt>dest</tt> operand
+						</td>
+					</tr>
+					<tr>
+						<td><strong>OR&nbsp;&nbsp;</strong> arg1, arg2, dest</td>
+						<td>Logical bitwise OR</td>
+					</tr>
+					<tr>
+						<td><strong>XOR&nbsp;</strong> arg1, arg2, dest</td>
+						<td>Logical bitwise exclusive OR</td>
+					</tr>
+					<tr>
+						<td><strong>NOT&nbsp;</strong> src</td>
+						<td>Logical bitwise inversion of <tt>src</tt></td>
+					</tr>
+				</table>
+			</section>
+			<section id="Operands">
+				<h2>Operands</h2>
+				<!--http://docs.oracle.com/cd/E19120-01/open.solaris/817-5477/ennby/index.html-->
+				<p>An instruction can have zero to three operands. Operands are
+					separated by commas (,). For instructions with two operands, the
+					first (lefthand) operand is the source operand, and the second
+					(righthand) operand is the destination operand (that is,
+					source-&gt;destination).</p>
+				<hr />
+				<p>Operands can be immediate (that is, constant expressions that
+					evaluate to an inline value), register (a value in the processor
+					number registers), or memory (a value stored in memory). A label
+					operand contains the address of the actual opcode. Label operands
+					are specified without prefix. Only jump and call instructions can
+					use label operands.</p>
+
+				<table class="table">
+					<tr class="pointer" data-toggle="collapse" data-target=".immediate">
+						<td><strong>Immediate</strong></td>
+						<td>are prefixed with a dollar sign <tt>$</tt></td>
+					</tr>
+					<tr class="collapse immediate">
+						<td>
+							<div class="collapse immediate">
+								<p><tt>MOV $1, %0</tt></p>
+								<p><tt>ADD $1, $2, %1</tt></p>
+							</div>
+						</td>
+						<td>
+							<div class="collapse immediate">
+								<p>Store 1 into the reg 0</p>
+								<p>Add 1 and 2 and store 3 into the reg 1</p>
+							</div>
+						</td>
+					</tr>
+					<tr class="pointer" data-toggle="collapse" data-target=".register">
+						<td><strong>Register</strong></td>
+						<td>are prefixed with a percent sign <tt>%</tt></td>
+					</tr>
+					<tr class="collapse register">
+						<td>
+							<div class="collapse register">
+								<p><tt>MOV %13, %0</tt></p>
+								<p><tt>MUL %0, $2, %0</tt></p>
+							</div>
+						</td>
+						<td>
+							<div class="collapse register">
+								<p>Move the value from the function return reg into the reg 0</p>
+								<p>Multiply the value from reg 0 by 2 and store the result into the reg 0</p>
+							</div>
+						</td>
+					</tr>
+					<tr class="pointer" data-toggle="collapse" data-target=".memory">
+						<td><strong>Memory</strong></td>
+						<td>are specified either by the name of a variable or by a
+							register that contains the address of a variable. Memory
+							references have the following syntax: <i>variable name</i> or <i>offset(base)</i>
+							<ul>
+								<li><small><i>Offset</i> is the displacement from
+										segment of the desired memory value. Offset is optional</small>
+								<li><small><i>Base</i> and index can be any of the
+										general 32–bit number registers</small></li>
+							</ul>
+						</td>
+					</tr>
+					<tr class="collapse memory">
+						<td>
+							<div class="collapse memory">
+								<p><tt>MOV -4(%BP), %0</tt></p>
+								<p><tt>SHL x, $2, %0</tt></p>
+								<p><tt>MOV (%0), x</tt></p>
+							</div>
+						</td>
+						<td>
+							<div class="collapse memory">
+								<p>Move the value from the location pointed by the <i>Base Pointer</i> reg minus four bytes into the reg 0</p>
+								<p>Shift the value from variable <tt>x</tt> to the left by two places and store the result into the reg 0</p>
+								<p>Move the value at the location pointed by the reg 0 into the variable <tt>x</tt></p>
+							</div>
+						</td>
+					</tr>
+					<tr class="pointer" data-toggle="collapse" data-target=".labeloperand">
+						<td><strong>Label</strong></td>
+						<td>are specified without any prefix or prefixed with an at sign <tt>@</tt></td>
+					</tr>
+					<tr class="collapse labeloperand">
+						<td>
+							<div class="collapse labeloperand">
+								<p><tt>JMP @if_exit</tt></p>
+								<p><tt>CALL swap</tt></p>
+							</div>
+						</td>
+						<td>
+							<div class="collapse labeloperand">
+								<p>Jump to the instruction pointed by the @if_exit label</p>
+								<p>Call a <tt>swap</tt> method</p>
+							</div>
+						</td>
+					</tr>
+				</table>
+			</section>
+			<section id="Flags">
+				<h2>Flags</h2>
+				<p>The FLAGS register is the status register that contains the
+					current state of the processor. This register is 5 bits wide.</p>
+				<table class="table">
+					<tr>
+						<td><strong>Zero flag (ZF)</strong></td>
+						<td>is used to check the result of an arithmetic operation,
+							including bitwise logical instructions. It is set if an
+							arithmetic result is zero, and reset otherwise</td>
+					</tr>
+					<tr>
+						<td><strong>Parity (PF)</strong></td>
+						<td>indicates if the number of set bits is odd or even in the
+							binary representation of the result of the last operation</td>
+					</tr>
+					<tr>
+						<td><strong>Sign (SF)</strong></td>
+						<td>indicates whether the result of the last mathematical
+							operation resulted in a value whose most significant bit was set</td>
+					</tr>
+					<tr>
+						<td><strong>Carry (CF)</strong></td>
+						<td>indicates when an arithmetic carry or borrow has been
+							generated out of the most significant bit position</td>
+					</tr>
+					<tr>
+						<td><strong>Overflow (OF)</strong></td>
+						<td>indicates when an arithmetic overflow has occurred in an
+							operation</td>
+					</tr>
+				</table>
+			</section>
+		</div>
+	</div>
+	<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-54527616-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+ <div id="footer">
+      <div class="container text-center">
+        <p><a href="sitemap.html">Sitemap</a>.</p>
+      </div>
+    </div>
+</body>
+</html>

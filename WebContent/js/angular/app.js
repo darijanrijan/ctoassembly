@@ -1,0 +1,1 @@
+var app = angular.module('Interpreter', ['ui', 'ui.bootstrap']);

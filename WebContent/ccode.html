@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+		<meta http-equiv="Pragma" content="no-cache" />
+		<meta http-equiv="Expires" content="0" />
+		<meta name="description" content="Online C to assembly compiler and assembly code interpreter.">
+		<link rel="shortcut icon" href="favicon.png"> 
+		<title>C to Assembly Compiler and Interpreter</title>
+		<link rel="stylesheet" href="css/codemirror.css">
+		<link rel="stylesheet" href="css/docs.css">
+		<link rel="stylesheet" href="css/lint.css">
+		<link rel="stylesheet" href="css/ccode.css">
+		<link rel="stylesheet" href="css/compare.css">
+		<link rel="stylesheet" href="css/interpreter.css">
+		<link rel="stylesheet" href="bootstrap/css/bootstrap.css">
+		<!--[if IE]><script src="js/vendor/excanvas.compiled.js"></script><![endif]-->
+		<script src="js/vendor/jquery.min.js"></script>
+		<script src="js/vendor/angular.min.js" type="text/javascript"></script>
+		<script src="js/vendor/angular-ui.js" type="text/javascript"></script>
+		<script src="js/vendor/codemirror/codemirror.js"></script>
+		<script src="js/vendor/codemirror/matchbrackets.js"></script>
+		<script src="js/vendor/codemirror/clike.js"></script>
+		<script src="js/vendor/codemirror/lint.js"></script>
+		<script src="js/vendor/bootstrap.min.js" type="text/javascript"></script>
+		<script src="js/vendor/ui-bootstrap-tpls-0.11.0.js" type="text/javascript"></script>
+		<script src="js/vendor/prettify.js"></script>
+		<script src="js/prototypes.js"></script>
+		<script src="js/constants.js"></script>
+		<script src="js/util.js"></script>
+		<script src="js/cpu.js"></script>
+		<script src="js/asmmetamodel.js"></script>
+		<script src="js/ui.js"></script>
+		<script src="js/angular/app.js" type="text/javascript"></script>
+		<script src="js/angular/directive.js" type="text/javascript"></script>
+		<script src="js/angular/controller.js" type="text/javascript"></script>
+	</head>
+	<body class="center-block" ng-app="Interpreter" ng-controller="Controller">
+		<div class="navbar navbar-custom navbar-static-top">
+			<div class="container">
+		    	<div class="navbar-custom">
+		      		<ul class="nav navbar-nav nav-justified">
+		      			<li class="active"><a href="/"><span>home</span></a></li>
+		        		<li><a href="microc.html"><span>micro c</span></a></li>
+		        		<li><a href="asm.html"><span>hypothetical asm</span></a></li>
+		        		<li><a href="about.html"><span>about</span></a></li>
+		      		</ul>
+				</div>
+			</div>
+		</div>
+		<div class="container">
+			<div class="tile">
+				<div class="col-md-offset-2 col-md-8">
+					<div class="spinner"></div>
+					<h3 style="color: #fcfcfc">C to assembly compiler and assembly code interpreter.</h3>
+					<div class="waiting-for-angular">
+						<h1 class="ccode-title">
+							Input <strong>micro-C code</strong>
+						</h1>
+						<textarea id="ccode" name="ccode" maxlength="2000" ui-codemirror ng-model="ccode"></textarea>
+						<script>
+							CodeMirror.remoteValidator = function(cm, updateLinting, options) {
+								var errorlineno = "";
+								var errormessage = "";
+			
+								if (!cm.getValue().trim().isEmpty()) {
+									var scope = angular.element($("body")).scope();
+									var lastChar = cm.getValue().slice(-1);
+									if (lastChar == "}" || lastChar == "\n" || lastChar == "\r" || lastChar == ";" || lastChar == " ") {
+										var result = scope.checkCode();
+										if (result) {
+											errorlineno = "" + (parseInt(result.lineNo) + 1);
+											errormessage = "" + result.message;
+											errormessage = errormessage.replace("&#039;", "'");
+										};
+									};
+									/** Legacy code from without angular-ui.js */
+									//if (scope != null) {
+									//	scope.$apply(function() {
+									//		scope.text = cm.getValue();
+									//	});
+									//}
+								};
+			
+								function result_cb(error_list) {
+									var found = [];
+			
+									for ( var i in error_list) {
+										var error = error_list[i];
+										var start_line = error.line_no;
+										var start_char;
+			
+										if (typeof (error.column_no_start) != "undefined") {
+											start_char = error.column_no_start;
+										} else {
+											start_char = error.column_no;
+										};
+			
+										var end_char;
+										if (typeof (error.column_no_stop) != "undefined") {
+											end_char = error.column_no_stop;
+										} else {
+											end_char = error.column_no;
+										};
+			
+										var end_line = error.line_no;
+										var message = error.message;
+			
+										var severity;
+										if (typeof (error.severity) != "undefined") {
+											severity = error.severity;
+										} else {
+											severity = 'error';
+											//severity = 'warning';
+										};
+			
+										found.push({
+											from : CodeMirror.Pos(start_line - 1, start_char),
+											to : CodeMirror.Pos(end_line - 1, end_char),
+											message : message,
+											severity : severity
+										});
+									};
+									updateLinting(cm, found);
+								};
+			
+								var error_list;
+								if (!errorlineno.isEmpty()) {
+									error_list = [ {
+										line_no : errorlineno,
+										message : errormessage,
+										severity : "error"
+									} ];
+								} else {
+									error_list = [];
+								};
+								errorlineno = "";
+								result_cb(error_list);
+							};
+							//init ccode field
+							app.value('ui.config', {
+								codemirror : {
+									lineNumbers: true,
+									smartIndent: true,
+									matchBrackets: true,
+									pollInterval: 500,
+									mode: "text/x-csrc",
+									gutters: [ "CodeMirror-lint-markers" ],
+									lint: {
+										"getAnnotations" : CodeMirror.remoteValidator,
+										"async" : true
+									}
+								}
+							});
+							/** Legacy code from without angular-ui.js */
+							//editor = CodeMirror.fromTextArea(document.getElementById("ccode"), {
+							//lineNumbers : true,
+							//matchBrackets : true,
+							//mode : "text/x-csrc",
+							//utters : [ "CodeMirror-lint-markers" ],
+							//	lint : {
+							//		"getAnnotations" : CodeMirror.remoteValidator,
+							//		"async" : true
+							//	}
+							//});
+							$(".waiting-for-angular .ccode-content").hide();
+						</script>
+						<p class="danger" ng-show="isCompileErrors">See <a href="microc.html">here</a> what our compiler can and cannot (e.g. if and while loops are supported, system output (scanf, printf) and for loops are not).</p>
+						<br />
+						<div class="buttons">
+							<button type="button" id="compile-button" class="btn btn-lg btn-primary" data-loading-text="compiling..." ng-click="compile()">compile</button>
+							<div class="btn-group">
+							<button type="button" class="btn btn-lg dropdown-toggle" data-toggle="dropdown">Load example <span class="caret"></span>
+							</button>
+							<ul class="dropdown-menu" role="menu">
+								<li><a href="#" ng-click="ccode='int main() {\n\tint x = 1;\n\tx = x + 2;\n\treturn x;\n}'">Simple function</a></li>
+								<li><a href="#" ng-click="ccode='int main() {\n\tint *x = malloc(sizeof(int));\n\t*x = 1;\n\treturn *x;\n}'">Pointers</a></li>
+								<li><a href="#" ng-click="ccode='int main() {\n\tint x[] = {1, 2};\n\tx[0] = 5;\n\treturn x[0];\n}'">Arrays</a></li>
+								<li><a href="#" ng-click="ccode='int swap(int *x, int *y) {\n\tint temp = *x;\n\t*x = *y;\n\t*y = temp;\n}\n\nint main() {\n\tint x = 5;\t\n\tint y = 10;\n\tswap(&x, &y);\n\treturn 0;\n}'">Swap function</a></li>
+								<li><a href="#" ng-click="ccode='int fact(int x) {\n\tif (x <= 1) return 1;\n\treturn x * fact(x-1);\n}\n\nint main() {\n\tint x = 4;\t\n\treturn fact(x);\n}'">Recursive function</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="tile" id="compare-page">
+			<div id="descriptions-compare"></div>
+			<div id="compare-container">
+				<div id="ccode-compare"></div>
+				<canvas id="connecter_canvas" width="300"></canvas>
+				<div id="asmcode-compare"></div>
+			</div>
+			<div class="buttons">
+				<button type="button" class="interprete-button btn btn-lg btn-primary" ng-click="interprete()" data-loading-text="initializing...">interprete</button>
+			</div>
+		</div>
+		</div>
+		<div class="tile" id="interpreter">
+			<div class="row">
+				<div class="alert alert-danger error-message" role="alert">  
+				</div>
+				<div class="alert alert-success success-message" role="alert">  
+				</div>
+			</div>
+			<div class="row" id="descriptions-interpreter">
+				<div class="col-md-offset-2 col-md-8">
+					<div class="text-center" style="height: 70px;">
+				        <button class="btn" ng-show="!!hideDescription" ng-click="hideDescription = false">Show instruction description</button>
+			    	</div>
+					<div class="panel panel-default" ng-hide="!!hideDescription">
+						<div class="panel-heading">
+							<tt>{{cpu.asmcode.findLine(cpu.instructionPointer).line}}</tt>
+							<span class="glyphicon glyphicon-remove pull-right btn" style="top:-2px; right:-10px" ng-click="hideDescription = true"></span>
+						</div>
+						<div class="panel-body">
+							{{cpu.asmcode.findLine(cpu.instructionPointer).description.description}}
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-offset-2 col-md-2 datagrid">
+					<div id="code">
+						<table id="codetable"></table>
+					</div>
+					<br />
+					<div>
+						<button id="execute" type="button" class="btn btn-primary" ng-click="executeLine()">execute</button>
+						<button type="button" class="interprete-button btn btn-primary" ng-click="interprete()" data-loading-text="initializing...">restart</button>
+			    	</div>
+			    	<hr />
+			    	<div>
+				        <label class="btn btn-info" ng-model="chosenOutput" btn-radio="'Binary'">binary</label>
+				        <label class="btn btn-info active" ng-model="chosenOutput" btn-radio="'Decimal'">decimal</label>
+				        <label class="btn btn-info" ng-model="chosenOutput" btn-radio="'Hexa'">hexa</label>
+			    	</div>
+				</div>
+				<div class="col-md-2 datagrid">
+					<div id="stack">
+						<table>
+							<thead>
+								<tr>
+									<th colspan="2">stack</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr ng-repeat="location in cpu.stack.getValues()">
+									<td>{{location.address}}</td>
+									<td ng-class="{sp : location.address == cpu.stack.sp, bp : location.address == cpu.stack.bp, bpsp : location.address == cpu.stack.bp && cpu.stack.bp == cpu.stack.sp}">{{showOutput(location.value)}}</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<br />
+					<div id="stackregs">
+						<table>
+							<thead>
+								<tr>
+									<th colspan="2">stack registers</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr class="bp">
+									<td width=130px>Base pointer %14</td>
+									<td width=20px>{{cpu.stack.bp}}</td>
+								</tr>
+								<tr class="sp">
+									<td width=130px>Stack pointer %15</td>
+									<td width=20px>{{cpu.stack.sp}}</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<br />
+				</div>
+				<div class="col-md-2 datagrid">
+					<div id="memory">
+						<table>
+							<thead>
+								<tr>
+									<th colspan="2">memory</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr ng-repeat="location in cpu.memory.getValues()">
+									<td>{{location.address}}</td>
+									<td highlight-changes val="location.value">{{showOutput(location.value)}}</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<br />
+					<div id="globals">
+						<table>
+							<thead>
+								<tr>
+									<th colspan="3">global variables</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr ng-repeat="location in cpu.globals.getValues()">
+									<td>{{location.address}}</td>
+									<td>{{location.name}}</td>
+									<td highlight-changes val="location.value">{{showOutput(location.value)}}</td>
+								</tr>
+								<tr ng-show="!cpu.globals.getValues().length">
+									<td colspan="2">none defined</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div class="col-md-2 datagrid">
+					<div id="flags">
+						<table>
+							<thead>
+								<tr>
+									<th colspan="5">flags</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>ZF</td>
+									<td>PF</td>
+									<td>SF</td>
+									<td>CF</td>
+									<td>OF</td>
+								</tr>
+								<tr>
+									<td ng-repeat="value in cpu.getFlags() track by $index" highlight-changes value="value">{{value}}</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<br />
+					<div id="registers">
+						<table>
+							<thead>
+								<tr>
+									<th colspan="2">registers</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr ng-repeat="value in cpu.registers.getValues() track by $index">
+									<td>%{{$index}}</td>
+									<td highlight-changes val="cpu.registers.getValue($index)">{{showOutput(value)}}</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-54527616-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+	 <div id="footer">
+      <div class="container text-center">
+        <p><a href="sitemap.html">Sitemap</a>.</p>
+      </div>
+    </div>
+	</body>
+</html>

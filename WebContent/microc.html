@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+	<meta http-equiv="Pragma" content="no-cache" />
+	<meta http-equiv="Expires" content="0" />
+	<meta name="description" content="Online C to assembly compiler - about C code.">
+	<title>C to Assembly Compiler and Interpreter - About micro-C code</title>
+	<link rel="shortcut icon" href="favicon.png"> 
+	<link rel="stylesheet" href="bootstrap/css/bootstrap.css">
+	<link rel="stylesheet" href="css/docs.css">
+	<script src="js/vendor/prettify.js"></script>
+</head>
+<body onload="prettyPrint()">
+	<div class="navbar navbar-custom navbar-static-top">
+			<div class="container">
+		      <div class="navbar-custom">
+		        <ul class="nav navbar-nav nav-justified">
+		          <li><a href="/"><span>home</span></a></li>
+		          <li class="active"><a href="microc.html"><span>micro c</span></a></li>
+		          <li><a href="asm.html"><span>hypothetical asm</span></a></li>
+		          <li><a href="about.html"><span>about</span></a></li>
+		        </ul>
+		      </div><!--/.nav-collapse -->
+		    </div><!--/.container -->
+		</div><!--/.navbar -->
+	<div class="tile container">
+		<div class="row">
+			<div class="col-md-offset-3 col-md-6">
+				<h1>
+					What is <strong>micro-C?</strong>
+				</h1>
+				<br />
+				<p class="lead">
+					<strong>micro-C</strong> is simplified <strong>C language</strong>,
+					stripped of certain functionalities that it contains. The
+					very basic idea of <strong>micro-C</strong> is simplicity and
+					avoidance of complicated language constructs in order to produce
+					clean and understandable <strong><a href="asm.html">hypothetical
+							assembly code</a></strong>.
+				</p>
+				<div>
+					<h2 class="green text-center">Supported</h2>
+					<br />
+					<div class="panel panel-success">
+  						<div class="panel-heading">
+  							Function definitions
+  						</div>
+						<div class="panel-body">
+  							<pre class="prettyprint lang-c">
+int fibonacci (int x) {
+	if (x <= 1) 
+		return 1;
+	return fibonacci(x - 1) + fibonacci(x - 2);
+}</pre>
+ 						</div>
+					</div>
+					<div class="panel panel-success">
+  						<div class="panel-heading">
+  							Global variable definition (
+						<tt>int</tt>
+						and
+						<tt>int *</tt>
+						type)
+  						</div>
+						<div class="panel-body">
+					<pre class="prettyprint lang-c">
+int x = 1;
+int main() {
+	return x;
+}</pre>
+ 						</div>
+					</div>
+					<div class="panel panel-success">
+  						<div class="panel-heading">
+  							Local variable definition (
+						<tt>int</tt>
+						and
+						<tt>int *</tt>
+						type)
+  						</div>
+						<div class="panel-body">
+					<pre class="prettyprint lang-c">
+int main() {
+	int a = 1;
+	int * b = 1;
+	int c[] = {1, 2, 5};
+
+	int r;
+	int * d, e, f[], g = 3, h = r = 5;
+}</pre>
+ 						</div>
+					</div>
+					<div class="panel panel-success">
+  						<div class="panel-heading">
+  							Pass by value and pass by pointer
+  						</div>
+						<div class="panel-body">
+					<pre class="prettyprint lang-c">
+int swap(int * x, int * y) {
+	int temp = *x;
+	*x = *y;
+	*y = temp;
+}
+</pre>
+ 						</div>
+					</div>		
+					<div class="panel panel-success">
+  						<div class="panel-heading">
+  							Arrays
+  						</div>
+						<div class="panel-body">
+					<pre class="prettyprint lang-c">
+int arr[10];
+int x = arr[5];</pre>
+ 						</div>
+					</div>		
+					<div class="panel panel-success">
+  						<div class="panel-heading">
+  							Arithmetic expressions
+  						</div>
+						<div class="panel-body">
+					<pre class="prettyprint lang-c">
+int x = 1;
+int * y = malloc(sizeof(int));
+* y = 1;
+int z = ++x + *y;
+z *= 3;
+z = x << 2;</pre>
+ 						</div>
+					</div>									
+					<div class="panel panel-success">
+  						<div class="panel-heading">
+  							Logical expressions
+  						</div>
+						<div class="panel-body">
+					<pre class="prettyprint lang-c">
+if (!x && y > 2) {
+	return 0;
+} else {
+	return function(x + y);
+}</pre>
+					<pre class="prettyprint lang-c">
+while (x--) {
+	y += 2;
+}</pre>
+ 						</div>
+					</div>									
+					<div class="panel panel-success">
+  						<div class="panel-heading">
+  							Parenthesis in arithmetic expressions
+  						</div>
+						<div class="panel-body">
+<pre class="prettyprint lang-c">
+x = (y + z) * 3 / (q << 2);</pre>
+ 						</div>
+					</div>									
+				</div>
+				<br />
+					<h2 class="red text-center">Not supported</h2>
+					<br />
+					<div class="panel panel-danger">
+  						<div class="panel-heading">
+  							Pointer to a function
+  						</div>
+						<div class="panel-body">
+					<pre class="prettyprint lang-c">
+int foo(int x) {
+	return x;
+}
+
+int bar() {
+	int (*ptr2func)(int);
+	ptr2func= foo;
+	int x = ptr2func(2);
+}</pre>
+ 						</div>
+					</div>
+					<div class="panel panel-danger">
+  						<div class="panel-heading">
+  							Pointer as a function return value
+  						</div>
+						<div class="panel-body">
+					<pre class="prettyprint lang-c">
+int * foo() {
+	int * x = malloc(sizeof(int));
+	*x = 1;
+	return x;
+}</pre>
+ 						</div>
+					</div>
+					<div class="panel panel-danger">
+  						<div class="panel-heading">
+  							Parenthesis in logical expressions
+  						</div>
+						<div class="panel-body">
+					<pre class="prettyprint lang-c">
+if (x == 1 && (y == 2 || z == 3)) {
+	...
+}</pre>
+ 						</div>
+					</div>
+					<div class="panel panel-danger">
+  						<div class="panel-heading">
+  							Standard input and output
+  						</div>
+						<div class="panel-body">
+<pre class="prettyprint lang-c">
+printf();
+scanf();</pre>
+ 						</div>
+					</div>
+					<div class="panel panel-danger">
+  						<div class="panel-heading">
+  							Directives
+  						</div>
+						<div class="panel-body">
+<pre class="prettyprint lang-c">
+#include&lt;stdio.h&gt;</pre>
+ 						</div>
+					</div>
+					<div class="panel panel-danger">
+  						<div class="panel-heading">
+  							For loops
+  						</div>
+						<div class="panel-body">
+					<pre class="prettyprint lang-c">
+for (int i = 0; i < 10; i++) {
+}</pre>
+ 						</div>
+					</div>
+					<div class="panel panel-danger">
+  						<div class="panel-heading">
+  							<tt>NULL</tt> keyword
+  						</div>
+						<div class="panel-body">
+<pre class="prettyprint lang-c">
+int * x = NULL;</pre>
+ 						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-54527616-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+ <div id="footer">
+      <div class="container text-center">
+        <p><a href="sitemap.html">Sitemap</a>.</p>
+      </div>
+    </div>
+</body>
+</html>

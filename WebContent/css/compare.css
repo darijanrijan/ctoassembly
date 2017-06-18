@@ -1,0 +1,144 @@
+/* CSS Style for the second pseudo page "Code comparison" */
+
+#compare-page {
+	display: none; 
+	margin: 0 auto;
+	padding-top: 10em;
+}
+
+#compare-page tr, #compare-page td {
+	-webkit-transition: none;
+	-moz-transition: none;
+	-o-transition: none;
+	transition: none;
+}
+
+#compare-container {
+	font-family: monospace;
+	position: relative;
+	margin: 0 auto;
+	width: 800px;
+}
+
+@media (max-width: 1500px) {
+	#descriptions-compare {
+		display:none;
+	}
+}
+
+@media (min-width: 1500px) {
+	#descriptions-compare {
+		position: fixed;
+		bottom: 0;
+		left: 50px;
+		width: 300px;
+		max-width: 300px;
+		display:inherit;
+		height: 
+	}
+}
+#ccode-compare {
+	width: 300px;
+	position:relative;
+	float: left;
+}
+
+#ccode-compare {
+   display: inline-block;
+}
+
+#asmcode-compare {
+	width: 200px;
+	position:relative;
+	float: left;
+	margin: 0 auto;
+}
+
+#ccode-compare table, #asmcode-compare table {
+	border: 0;
+	border-collapse: collapse;
+	width: 100%;
+}
+
+#ccode-compare table tr, #asmcode-compare table tr {
+	background: #fcfcfc;
+}
+
+#connecter_canvas {
+	position: relative;
+	float: left;
+	margin: 0 auto;
+}
+
+.selectedLeft {
+	border: 0px solid #ffa500; 
+background: rgb(255,220,0) !important; /* Old browsers */
+/*background: -moz-linear-gradient(left, rgba(255,220,0,1) 0%, rgba(255,220,50,1) 0%, rgba(255,220,50,1) 50%, rgba(255,165,0,1) 100%); /* FF3.6+ */
+/*background: -webkit-gradient(linear, left top, right top, color-stop(0%,rgba(255,220,0,1)), color-stop(0%,rgba(255,220,50,1)), color-stop(50%,rgba(255,220,50,1)), color-stop(100%,rgba(255,165,0,1))); /* Chrome,Safari4+ */
+/*background: -webkit-linear-gradient(left, rgba(255,220,0,1) 0%,rgba(255,220,50,1) 0%,rgba(255,220,50,1) 50%,rgba(255,165,0,1) 100%); /* Chrome10+,Safari5.1+ */
+/*background: -o-linear-gradient(left, rgba(255,220,0,1) 0%,rgba(255,220,50,1) 0%,rgba(255,220,50,1) 50%,rgba(255,165,0,1) 100%); /* Opera 11.10+ */
+/*background: -ms-linear-gradient(left, rgba(255,220,0,1) 0%,rgba(255,220,50,1) 0%,rgba(255,220,50,1) 50%,rgba(255,165,0,1) 100%); /* IE10+ */
+/*background: linear-gradient(to right, rgba(255,220,0,1) 0%,rgba(255,220,50,1) 0%,rgba(255,220,50,1) 50%,rgba(255,165,0,1) 100%); /* W3C */
+/*filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffdc00', endColorstr='#ffa500',GradientType=1 ); /* IE6-9 */
+}
+
+.selectedLeft td {
+	background-clip: padding-box;
+	border-top-left-radius: 5px;
+	-webkit-border-top-left-radius: 5px; 
+	-moz-border-top-left-radius: 5px; 
+	-o-border-top-left-radius: 5px; 
+	border-bottom-left-radius: 5px;
+	-webkit-border-bottom-left-radius: 5px; 
+	-moz-border-bottom-left-radius: 5px; 
+	-o-border-bottom-left-radius: 5px; 
+}
+
+.selectedRight, .selectedRightOnlyOne, .selectedRightTop, .selectedRightBottom {
+	border: 0px solid #ffa500; 
+	background: rgb(255,220,0) !important; /* Old browsers */
+/*background: -moz-linear-gradient(left, rgba(255,165,0,1) 0%, rgba(255,220,50,1) 50%, rgba(255,220,50,1) 100%, rgba(255,220,0,1) 100%); /* FF3.6+ */
+/*background: -webkit-gradient(linear, left top, right top, color-stop(0%,rgba(255,165,0,1)), color-stop(50%,rgba(255,220,50,1)), color-stop(100%,rgba(255,220,50,1)), color-stop(100%,rgba(255,220,0,1))); /* Chrome,Safari4+ */
+/*background: -webkit-linear-gradient(left, rgba(255,165,0,1) 0%,rgba(255,220,50,1) 50%,rgba(255,220,50,1) 100%,rgba(255,220,0,1) 100%); /* Chrome10+,Safari5.1+ */
+/*background: -o-linear-gradient(left, rgba(255,165,0,1) 0%,rgba(255,220,50,1) 50%,rgba(255,220,50,1) 100%,rgba(255,220,0,1) 100%); /* Opera 11.10+ */
+/*background: -ms-linear-gradient(left, rgba(255,165,0,1) 0%,rgba(255,220,50,1) 50%,rgba(255,220,50,1) 100%,rgba(255,220,0,1) 100%); /* IE10+ */
+/*background: linear-gradient(to right, rgba(255,165,0,1) 0%,rgba(255,220,50,1) 50%,rgba(255,220,50,1) 100%,rgba(255,220,0,1) 100%); /* W3C */
+/*filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffa500', endColorstr='#ffdc00',GradientType=1 ); /* IE6-9 */
+}
+
+.selectedRight td {
+	background-clip: padding-box;
+}
+
+.selectedRightOnlyOne td {
+	background-clip: padding-box;
+	border-top-right-radius: 5px;
+	-webkit-border-top-right-radius: 5px; 
+	-moz-border-top-right-radius: 5px; 
+	-o-border-top-right-radius: 5px; 
+	border-bottom-right-radius: 5px;
+	-webkit-border-bottom-right-radius: 5px; 
+	-moz-border-bottom-right-radius: 5px; 
+	-o-border-bottom-right-radius: 5px; 
+}
+
+.selectedRightTop td {
+	background-clip: padding-box;
+	border-top-right-radius: 5px;
+	-webkit-border-top-right-radius: 5px; 
+	-moz-border-top-right-radius: 5px; 
+	-o-border-top-right-radius: 5px; 
+}
+
+.selectedRightBottom td {
+	background-clip: padding-box;
+	border-bottom-right-radius: 5px;
+	-webkit-border-bottom-right-radius: 5px; 
+	-moz-border-bottom-right-radius: 5px; 
+	-o-border-bottom-right-radius: 5px; 
+}
+
+.keyword {
+	font-weight: bold;
+	color: #7700a5;
+}
