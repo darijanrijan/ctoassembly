@@ -37,7 +37,7 @@ app.controller("Controller", function($scope) {
 	function invokeCompiler(ccode) {
 		var result = $.ajax({
 			type: "post",
-			url: "/hint/compile",
+			url: "/compile",
 			async: false,
 			data: {
 				ccode: ccode
