@@ -26,7 +26,7 @@ app.directive('waitingForAngular', ['$timeout', function(timer) {
 		link : function(scope, elem, attrs) {
 			var hideSpinner = function() {
 				//once Angular is started, set opacitiy back to 1:
-				//it would be nicer if I used display:none, show() and hide() but CodeMirror is not created when display:none. God knows why
+				//it would be nicer if I used display:none, show() and hide() but CodeMirror is not created when display:none.
 				$('.spinner').hide();
 				$('.CodeMirror').css({opacity: 1});
 				$('.buttons').css({opacity: 1});
