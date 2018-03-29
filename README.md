@@ -5,8 +5,8 @@ http://ctoassembly.com
 C to Assembly is an online compiler of micro-C code (a subset of C large enough for demonstration) and interpreter of hypothetical Assembly (micro-C is compiled to hypothetical Assembly which looks a lot like x86 asm).
 
 See docs here:
-  - [micro-C](https://ctoassembly.com/microc.html)
-  - [hypothetical Assembly](https://ctoassembly.com/asm.html)
+  - [micro-C](http://ctoassembly.com/microc.html)
+  - [hypothetical Assembly](http://ctoassembly.com/asm.html)
 
 ## Repo structure
 * `src/main/java/com/ctoassembly/compiler` - Java compiler (micro-C to hypothetical-asm)
