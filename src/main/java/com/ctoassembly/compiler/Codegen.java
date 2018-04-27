@@ -372,7 +372,7 @@ public class Codegen {
 			output= fRegisters.takeReg();
 			genMov(input, output);
 		}
-		enqueueInstruction(new OperandsInstruction(Definitions.ARITHMETIC_OPERATORS[0][Definitions.SUB_OP], "$0,", printSymbol(output), printSymbol(output)), new InstructionDescription("Unary minus."));
+		enqueueInstruction(new OperandsInstruction(Definitions.ARITHMETIC_OPERATORS[0][Definitions.SUB_OP], "$0", printSymbol(output), printSymbol(output)), new InstructionDescription("Unary minus."));
 		return output;
 	}
 	
