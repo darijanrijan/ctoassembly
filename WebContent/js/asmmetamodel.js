@@ -284,7 +284,7 @@ NotOp.prototype.execute = function(context) {
 /** Shift left operation */
 function ShlOp() {};
 ShlOp.prototype.execute = function(context) {
-	var result = context.operand1.getValue() << 1;
+	var result = context.operand1.getValue() << context.operand2.getValue();
 	var resultNormalized = normalize(result);
 	var carry = (result > Const.INT_MAX_UNSIGNED) | 0;
 	context.destinationOperand.setValue(result);
@@ -294,7 +294,7 @@ ShlOp.prototype.execute = function(context) {
 /** Shift right operation */
 function ShrOp() {};
 ShrOp.prototype.execute = function(context) {
-	var result = context.operand1.getValue() >> 1;
+	var result = context.operand1.getValue() >> context.operand2.getValue();
 	var carry = context.operand1.getValue() & 1;
 	context.destinationOperand.setValue(result);
 	context.cpuModel.setFlags(result, carry, 0);
