@@ -286,7 +286,7 @@ function ShlOp() {};
 ShlOp.prototype.execute = function(context) {
 	var result = context.operand1.getValue() << context.operand2.getValue();
 	var resultNormalized = normalize(result);
-	var carry = (result > Const.INT_MAX_UNSIGNED) | 0;
+	var carry = context.operand1.getValue() > (Const.INT_MAX_UNSIGNED >> context.operand2.getValue());
 	context.destinationOperand.setValue(result);
 	context.cpuModel.setFlags(resultNormalized, carry, 0);
 };
@@ -295,7 +295,7 @@ ShlOp.prototype.execute = function(context) {
 function ShrOp() {};
 ShrOp.prototype.execute = function(context) {
 	var result = context.operand1.getValue() >> context.operand2.getValue();
-	var carry = context.operand1.getValue() & 1;
+	var carry = context.operand1.getValue() & ((1 << context.operand2.getValue()) - 1);
 	context.destinationOperand.setValue(result);
 	context.cpuModel.setFlags(result, carry, 0);
 };
